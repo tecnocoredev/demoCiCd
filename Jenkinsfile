@@ -11,14 +11,16 @@ pipeline {
     }
     stage('Debug') {
       steps {
-        sh "ls -l" // Revisa el contenido del directorio actual
-        sh "cat pom.xml || echo 'pom.xml no encontrado'" // Lee el pom.xml desde el directorio actual
+        // Usa `ls -l` para verificar el contenido del directorio
+        sh "ls -l"
+        // Asegúrate de que `cat pom.xml` funcione
+        sh "cat pom.xml" 
       }
     }
     stage('Build') {
       steps {
-        
-        sh "docker run --rm -v $PWD:/app -w /app maven:3.8.5-openjdk-17 mvn -B clean package"
+        // Usa la variable $WORKSPACE para montar el directorio del proyecto
+        sh "docker run --rm -v $WORKSPACE:/app -w /app maven:3.8.5-openjdk-17 mvn -B clean package"
       }
     }
     stage('Build Docker Image') {
