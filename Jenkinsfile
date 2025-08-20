@@ -6,10 +6,21 @@ pipeline {
   }
 
   stages {
-    stage('Checkout and Build') {
+    stage('Checkout') {
       steps {
         checkout scm
-        sh 'docker run --rm -v $PWD:/app -w /app maven:3.8.6-openjdk-17 mvn -B clean package'
+      }
+    }
+
+    stage('Build with Maven') {
+      agent {
+        docker {
+          image 'maven:3.8.6-openjdk-17'
+          args '-v $HOME/.m2:/root/.m2' // Opcional: cache para dependencias
+        }
+      }
+      steps {
+        sh 'mvn -B clean package'
       }
     }
 
