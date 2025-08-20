@@ -21,13 +21,14 @@ pipeline {
 
     stage('Build') {
       steps {
-        sh "docker build -f Dockerfile.build -t build-image-temporary ."
+        // Usa el contenedor de Maven para compilar el proyecto en el workspace de Jenkins
+        sh "docker run --rm -v $WORKSPACE:/app -v $HOME/.m2:/root/.m2 -w /app maven:3.8.5-openjdk-17 mvn -B clean package"
       }
     }
-    
+
     stage('Build Docker Image') {
       steps {
-        // En este paso se construye la imagen final de tu aplicación
+        // Ahora que el JAR existe, Docker puede construir la imagen
         sh "docker build -t $IMAGE_NAME ."
       }
     }
@@ -42,17 +43,7 @@ pipeline {
 
   post {
     always {
-      // Necesitas copiar los archivos del contenedor temporal al host
-      // Esto es un paso adicional si necesitas los artifacts en el host
-      script {
-        // Obtenemos el ID del contenedor temporal
-        def containerId = sh(script: "docker create build-image-temporary", returnStdout: true).trim()
-        // Copiamos los archivos de reporte y el JAR del contenedor al workspace de Jenkins
-        sh "docker cp ${containerId}:/app/target/surefire-reports ./"
-        sh "docker cp ${containerId}:/app/target/*.jar ./"
-        // Eliminamos el contenedor temporal
-        sh "docker rm ${containerId}"
-      }
+      // Ahora que el JAR existe en el workspace, JUnit y archiveArtifacts funcionarán
       junit 'target/surefire-reports/*.xml'
       archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
     }
