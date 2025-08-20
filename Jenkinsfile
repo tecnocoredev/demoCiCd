@@ -21,13 +21,9 @@ pipeline {
 
     stage('Build') {
       steps {
-        script {
-          def uid = sh(script: 'id -u', returnStdout: true).trim()
-          def gid = sh(script: 'id -g', returnStdout: true).trim()
-          
-          // Se monta el volumen del proyecto y se indica a Maven que use una carpeta diferente para el caché
-          sh "docker run --rm -v $WORKSPACE:/app -w /app --user ${uid}:${gid} maven:3.8.5-openjdk-17 mvn -B -Dmaven.repo.local=/app/.m2 clean package"
-        }
+        // En esta etapa, el usuario del contenedor es 'root' por defecto.
+        // No pasamos --user para que pueda escribir en su home por defecto.
+        sh "docker run --rm -v $WORKSPACE:/app -v $HOME/.m2:/root/.m2 -w /app maven:3.8.5-openjdk-17 mvn -B clean package"
       }
     }
 
