@@ -40,7 +40,7 @@ pipeline {
   }
   post {
     always {
-      node {
+      node('any') {
         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
           junit '**/target/surefire-reports/*.xml'
         }
