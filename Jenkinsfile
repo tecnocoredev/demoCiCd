@@ -1,5 +1,5 @@
 pipeline {
-  agent none
+  agent none // No global agent for the entire pipeline
 
   environment {
     IMAGE_NAME = "demo-ci-cd:latest"
@@ -9,7 +9,7 @@ pipeline {
     stage('Checkout and Build') {
       agent {
         docker {
-          image 'maven:3.8.6-openjdk-17'
+          image 'maven:3.8.6-openjdk-17' // This agent is great for building Java apps
         }
       }
       steps {
@@ -17,11 +17,23 @@ pipeline {
         sh 'mvn -B clean package'
       }
     }
+    stage('Debug Reports') {
+      agent {
+        docker {
+          image 'maven:3.8.6-openjdk-17' // Still using Maven agent for reports
+        }
+      }
+      steps {
+        sh 'echo "Contenido de target/surefire-reports:"'
+        sh 'ls -l target/surefire-reports || echo "No se encontró la carpeta de reportes."'
+        sh 'find . -name "*.xml"'
+      }
+    }
     stage('Build Docker Image') {
       agent {
         docker {
-          image 'docker:latest'
-          args '-v /var/run/docker.sock:/var/run/docker.sock' 
+          image 'docker:latest' // Use an agent that *has* the Docker client
+          args '-v /var/run/docker.sock:/var/run/docker.sock' // Mount the Docker socket
         }
       }
       steps {
@@ -31,7 +43,7 @@ pipeline {
     stage('Run Container') {
       agent {
         docker {
-          image 'docker:latest'
+          image 'docker:latest' // Continue using the Docker agent
           args '-v /var/run/docker.sock:/var/run/docker.sock'
         }
       }
@@ -45,7 +57,7 @@ pipeline {
   post {
     always {
       script {
-        node {
+        node { // This `node` block typically runs on the main Jenkins agent
           catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
             junit '**/target/surefire-reports/*.xml'
           }
