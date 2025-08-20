@@ -17,7 +17,7 @@ pipeline {
     }
     stage('Build') {
       steps {
-        // Usa $PWD en lugar de $WORKSPACE para mayor seguridad
+        
         sh "docker run --rm -v $PWD:/app -w /app maven:3.8.5-openjdk-17 mvn -B clean package"
       }
     }
