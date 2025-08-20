@@ -1,10 +1,5 @@
 pipeline {
-  agent {
-    docker {
-      image 'maven:3.8.6-openjdk-17'
-      args '-v /var/run/docker.sock:/var/run/docker.sock'
-    }
-  }
+  agent any
   environment {
     IMAGE_NAME = "demo-ci-cd:latest"
   }
@@ -17,13 +12,6 @@ pipeline {
     stage('Build & Test') {
       steps {
         sh 'mvn -B clean package'
-      }
-    }
-    stage('Debug Reports') {
-      steps {
-        sh 'echo "Contenido de target/surefire-reports:"'
-        sh 'ls -l target/surefire-reports || echo "No se encontró la carpeta de reportes."'
-        sh 'find . -name "*.xml"'
       }
     }
     stage('Build Docker Image') {
