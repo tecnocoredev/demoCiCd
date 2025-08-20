@@ -40,10 +40,14 @@ pipeline {
   }
   post {
     always {
-      catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        junit '**/target/surefire-reports/*.xml'
+      script {
+        node {
+          catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+            junit '**/target/surefire-reports/*.xml'
+          }
+          archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+        }
       }
-      archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
     }
   }
 }
