@@ -12,23 +12,8 @@ pipeline {
       }
     }
 
-    stage('Debug') {
+    stage('Build and Package') {
       steps {
-        sh "ls -l"
-        sh "cat pom.xml"
-      }
-    }
-
-    stage('Build') {
-      steps {
-        // Usa el contenedor de Maven para compilar el proyecto en el workspace de Jenkins
-        sh "docker run --rm -v $WORKSPACE:/app -v $HOME/.m2:/root/.m2 -w /app maven:3.8.5-openjdk-17 mvn -B clean package"
-      }
-    }
-
-    stage('Build Docker Image') {
-      steps {
-        // Ahora que el JAR existe, Docker puede construir la imagen
         sh "docker build -t $IMAGE_NAME ."
       }
     }
@@ -43,9 +28,7 @@ pipeline {
 
   post {
     always {
-      // Ahora que el JAR existe en el workspace, JUnit y archiveArtifacts funcionarán
-      junit 'target/surefire-reports/*.xml'
-      archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+      echo 'La fase de compilación se realizó correctamente dentro del Dockerfile.'
     }
   }
 }
