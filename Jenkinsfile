@@ -6,10 +6,22 @@ pipeline {
   }
 
   stages {
-    stage('Checkout and Build') {
+    stage('Checkout') {
       steps {
         checkout scm
-        sh 'docker run --rm -v $PWD:/app -w /app maven:3.8.5-openjdk-17 mvn -B clean package'
+      }
+    }
+
+    stage('Debug') {
+      steps {
+        sh 'ls -l $PWD'
+        sh 'cat $PWD/pom.xml || echo "pom.xml no encontrado"'
+      }
+    }
+
+    stage('Build') {
+      steps {
+        sh 'docker run --rm -v ${env.WORKSPACE}:/app -w /app maven:3.8.5-openjdk-17 mvn -B clean package'
       }
     }
 
