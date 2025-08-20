@@ -14,27 +14,28 @@ pipeline {
 
     stage('Debug') {
       steps {
-        sh 'ls -l $PWD'
-        sh 'cat $PWD/pom.xml || echo "pom.xml no encontrado"'
+        sh "ls -l $PWD"
+        sh "cat $PWD/pom.xml || echo 'pom.xml no encontrado'"
       }
     }
 
     stage('Build') {
       steps {
-        sh 'docker run --rm -v ${env.WORKSPACE}:/app -w /app maven:3.8.5-openjdk-17 mvn -B clean package'
+        // Aquí se usan comillas dobles para expandir $WORKSPACE
+        sh "docker run --rm -v $WORKSPACE:/app -w /app maven:3.8.5-openjdk-17 mvn -B clean package"
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        sh 'docker build -t $IMAGE_NAME .'
+        sh "docker build -t $IMAGE_NAME ."
       }
     }
 
     stage('Run Container') {
       steps {
-        sh 'docker rm -f demo-ci-cd || true'
-        sh 'docker run -d --name demo-ci-cd -p 8080:8080 $IMAGE_NAME'
+        sh "docker rm -f demo-ci-cd || true"
+        sh "docker run -d --name demo-ci-cd -p 8080:8080 $IMAGE_NAME"
       }
     }
   }
