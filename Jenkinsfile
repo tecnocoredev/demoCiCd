@@ -14,20 +14,19 @@ pipeline {
 
     stage('Debug') {
       steps {
-        sh "ls -l" // Revisa el contenido del directorio actual
-        sh "cat pom.xml || echo 'pom.xml no encontrado'" // Lee el pom.xml desde el directorio actual
+        sh "ls -l"
+        sh "cat pom.xml"
       }
     }
 
     stage('Build') {
       steps {
         script {
-          // Obtiene los IDs de usuario y grupo de Jenkins para evitar problemas de permisos
           def uid = sh(script: 'id -u', returnStdout: true).trim()
           def gid = sh(script: 'id -g', returnStdout: true).trim()
           
-          // Ejecuta Docker con los mismos IDs de usuario y grupo
-          sh "docker run --rm -v $WORKSPACE:/app -w /app --user ${uid}:${gid} maven:3.8.5-openjdk-17 mvn -B clean package"
+          // Se agrega un segundo volumen para el directorio .m2
+          sh "docker run --rm -v $WORKSPACE:/app -v $HOME/.m2:/root/.m2 -w /app --user ${uid}:${gid} maven:3.8.5-openjdk-17 mvn -B clean package"
         }
       }
     }
@@ -48,8 +47,6 @@ pipeline {
 
   post {
     always {
-      // Estos pasos se ejecutarán solo si el stage 'Build' tiene éxito
-      // y se generan los archivos de reporte y el .jar
       junit '**/target/surefire-reports/*.xml'
       archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
     }
