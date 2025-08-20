@@ -1,0 +1,11 @@
+# Usa la imagen base de Maven
+FROM maven:3.8.5-openjdk-17
+
+# Copia todo el contenido de tu proyecto en el contenedor
+COPY . /app
+
+# Establece el directorio de trabajo
+WORKDIR /app
+
+# Ejecuta el comando de compilación
+RUN mvn -B clean package

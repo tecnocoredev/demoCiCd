@@ -21,14 +21,13 @@ pipeline {
 
     stage('Build') {
       steps {
-        // En esta etapa, el usuario del contenedor es 'root' por defecto.
-        // No pasamos --user para que pueda escribir en su home por defecto.
-        sh "docker run --rm -v $WORKSPACE:/app -v $HOME/.m2:/root/.m2 -w /app maven:3.8.5-openjdk-17 mvn -B clean package"
+        sh "docker build -f Dockerfile.build -t build-image-temporary ."
       }
     }
-
+    
     stage('Build Docker Image') {
       steps {
+        // En este paso se construye la imagen final de tu aplicación
         sh "docker build -t $IMAGE_NAME ."
       }
     }
@@ -43,7 +42,18 @@ pipeline {
 
   post {
     always {
-      junit '**/target/surefire-reports/*.xml'
+      // Necesitas copiar los archivos del contenedor temporal al host
+      // Esto es un paso adicional si necesitas los artifacts en el host
+      script {
+        // Obtenemos el ID del contenedor temporal
+        def containerId = sh(script: "docker create build-image-temporary", returnStdout: true).trim()
+        // Copiamos los archivos de reporte y el JAR del contenedor al workspace de Jenkins
+        sh "docker cp ${containerId}:/app/target/surefire-reports ./"
+        sh "docker cp ${containerId}:/app/target/*.jar ./"
+        // Eliminamos el contenedor temporal
+        sh "docker rm ${containerId}"
+      }
+      junit 'target/surefire-reports/*.xml'
       archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
     }
   }
