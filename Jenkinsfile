@@ -26,6 +26,13 @@ pipeline {
       }
     }
   }
+  stage('Debug Reports') {
+    steps {
+      sh 'echo "Contenido de target/surefire-reports:"'
+      sh 'ls -l target/surefire-reports || echo "No se encontró la carpeta de reportes."'
+      sh 'find . -name "*.xml"'
+    }
+  }
   post {
     always {
       junit '**/target/surefire-reports/*.xml'
