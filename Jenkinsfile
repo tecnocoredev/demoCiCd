@@ -1,5 +1,10 @@
 pipeline {
-  agent any
+  agent {
+    docker {
+      image 'maven:3.8.6-openjdk-17'
+      args '-v /var/run/docker.sock:/var/run/docker.sock'r
+    }
+  }
   environment {
     IMAGE_NAME = "demo-ci-cd:latest"
   }
