@@ -25,8 +25,8 @@ pipeline {
           def uid = sh(script: 'id -u', returnStdout: true).trim()
           def gid = sh(script: 'id -g', returnStdout: true).trim()
           
-          // Se agrega un segundo volumen para el directorio .m2
-          sh "docker run --rm -v $WORKSPACE:/app -v $HOME/.m2:/root/.m2 -w /app --user ${uid}:${gid} maven:3.8.5-openjdk-17 mvn -B clean package"
+          // Se monta el volumen del proyecto y se indica a Maven que use una carpeta diferente para el caché
+          sh "docker run --rm -v $WORKSPACE:/app -w /app --user ${uid}:${gid} maven:3.8.5-openjdk-17 mvn -B -Dmaven.repo.local=/app/.m2 clean package"
         }
       }
     }
