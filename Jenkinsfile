@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        jdk 'jdk-21'           // Nombre del JDK configurado en Jenkins
-        maven 'maven-latest'   // Nombre de Maven configurado en Jenkins
-    }
-
     environment {
         DOCKER_IMAGE = "tecnocore/demo-ci-cd:${env.BUILD_NUMBER}"
         DOCKER_HUB_CREDENTIALS = 'dockerhub-credentials'
@@ -22,8 +17,12 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                echo 'Ejecutando la compilación y pruebas del proyecto...'
-                sh 'mvn clean package -DskipTests'
+                echo 'Ejecutando la compilación y pruebas del proyecto con Java 21...'
+                script {
+                    docker.image('maven:3.9.4-openjdk-21').inside('-v $PWD:/app') {
+                        sh 'mvn clean package -DskipTests'
+                    }
+                }
             }
         }
 
