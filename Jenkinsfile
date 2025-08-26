@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "mrgustcl/demo-ci-cd:${env.BUILD_NUMBER}"
+        DOCKER_IMAGE = "tecnocore/demo-ci-cd:${env.BUILD_NUMBER}"
         DOCKER_HUB_CREDENTIALS = 'dockerhub-credentials'
         STAGING_CONTAINER_NAME = 'demo-ci-cd-staging'
     }
