@@ -26,6 +26,10 @@ pipeline {
                     sh "mkdir -p ${workspace}"
                     sh "mkdir -p ${m2repo}"
 
+                    // Cambiamos los permisos del directorio para que el usuario 'root' del contenedor pueda escribir en él.
+                    // Nota: Asegúrate de que el usuario 'jenkins' pueda ejecutar este comando con 'sudo'.
+                    sh "sudo chown -R 1000:1000 ${m2repo}"
+
                     docker.image('maven:3.9.4-eclipse-temurin-21').inside("-v ${workspace}:/app -v ${m2repo}:/root/.m2") {
                         sh 'mvn clean package -DskipTests'
                     }
@@ -33,7 +37,39 @@ pipeline {
             }
         }
 
-        // Resto del pipeline igual ...
+        stage('Build Docker Image') {
+            steps {
+                echo 'Creando la imagen de Docker...'
+                script {
+                    def dockerImage = docker.build("${DOCKER_IMAGE}")
+                    echo "Imagen de Docker creada: ${dockerImage.id}"
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                echo 'Empujando la imagen a Docker Hub...'
+                script {
+                    withCredentials([usernamePassword(credentialsId: DOCKER_HUB_CREDENTIALS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+                        docker.image("${DOCKER_IMAGE}").push()
+                        echo "Imagen ${DOCKER_IMAGE} empujada a Docker Hub."
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Staging') {
+            steps {
+                echo 'Desplegando la aplicación en el entorno de Staging...'
+                script {
+                    sh "docker rm -f ${STAGING_CONTAINER_NAME} || true"
+                    sh "docker run -d --name ${STAGING_CONTAINER_NAME} -p 8080:8080 ${DOCKER_IMAGE}"
+                    echo "Contenedor ${STAGING_CONTAINER_NAME} desplegado y escuchando en el puerto 8080."
+                }
+            }
+        }
     }
 
     post {
