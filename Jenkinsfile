@@ -75,7 +75,7 @@ pipeline {
             steps {
                 echo 'Desplegando en el entorno de Staging...'
                 sh "docker rm -f ${env.STAGING_CONTAINER_NAME} || true"
-                sh "docker run -d --name ${env.STAGING_CONTAINER_NAME} -p 8081:8080 ${env.DOCKER_IMAGE}"
+                sh "docker run -d --name ${env.STAGING_CONTAINER_NAME} -p 8083:8080 ${env.DOCKER_IMAGE}"
             }
         }
     }
