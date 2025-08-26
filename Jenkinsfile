@@ -19,8 +19,11 @@ pipeline {
             steps {
                 echo 'Ejecutando la compilación y pruebas del proyecto...'
                 script {
-                    docker.image('maven:3.9.4-eclipse-temurin-21').inside("-v $PWD:/app -v /var/jenkins_home/.m2:/root/.m2") {
-                        sh 'mvn clean package -DskipTests'
+                    docker.image('maven:3.9.4-eclipse-temurin-21').inside("-v $PWD:/app") {
+                        // Crear carpeta local para repositorio Maven
+                        sh 'mkdir -p .m2/repository'
+                        // Ejecutar Maven usando repositorio local en /app/.m2/repository
+                        sh 'mvn clean package -DskipTests -Dmaven.repo.local=/app/.m2/repository'
                     }
                 }
             }
