@@ -1,9 +1,10 @@
 pipeline {
     agent any
+
     environment {
         DOCKER_IMAGE = "mrgustcl/demo-ci-cd:${env.BUILD_NUMBER}"
-        DOCKER_HUB_CREDENTIALS = "dockerhub-credentials"
-        STAGING_CONTAINER_NAME = "demo-ci-cd-staging"
+        DOCKER_HUB_CREDENTIALS = 'dockerhub-credentials'
+        STAGING_CONTAINER_NAME = 'demo-ci-cd-staging'
     }
 
     stages {
@@ -28,6 +29,22 @@ pipeline {
         stage('Static Analysis') {
             steps {
                 echo 'Realizando análisis de código estático con SonarQube...'
+                // Aquí puedes agregar integración con SonarQube si lo deseas
+            }
+        }
+
+        stage('Docker Hub Login') {
+            steps {
+                echo 'Autenticando con Docker Hub...'
+                script {
+                    withCredentials([usernamePassword(
+                        credentialsId: env.DOCKER_HUB_CREDENTIALS,
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
+                    }
+                }
             }
         }
 
@@ -42,7 +59,11 @@ pipeline {
             steps {
                 echo 'Subiendo la imagen a Docker Hub...'
                 script {
-                    withCredentials([usernamePassword(credentialsId: env.DOCKER_HUB_CREDENTIALS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    withCredentials([usernamePassword(
+                        credentialsId: env.DOCKER_HUB_CREDENTIALS,
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
                         sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
                         sh "docker push ${env.DOCKER_IMAGE}"
                     }
@@ -53,7 +74,7 @@ pipeline {
         stage('Deploy to Staging') {
             steps {
                 echo 'Desplegando en el entorno de Staging...'
-                sh "docker rm -f ${env.STAGING_CONTAINER_NAME} || true"            
+                sh "docker rm -f ${env.STAGING_CONTAINER_NAME} || true"
                 sh "docker run -d --name ${env.STAGING_CONTAINER_NAME} -p 8081:8080 ${env.DOCKER_IMAGE}"
             }
         }
@@ -61,6 +82,7 @@ pipeline {
 
     post {
         always {
+            sh 'docker logout'
             echo 'Pipeline finalizado.'
         }
     }
