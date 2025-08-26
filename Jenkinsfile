@@ -19,7 +19,7 @@ pipeline {
             steps {
                 echo 'Ejecutando la compilación y pruebas del proyecto con Java 21...'
                 script {
-                    docker.image('maven:3.9.4-openjdk-21').inside('-v $PWD:/app') {
+                    docker.image('maven:3.9.4-eclipse-temurin-21').inside('-v $PWD:/app') {
                         sh 'mvn clean package -DskipTests'
                     }
                 }
