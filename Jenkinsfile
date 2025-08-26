@@ -19,11 +19,14 @@ pipeline {
             steps {
                 echo 'Ejecutando la compilación y pruebas del proyecto...'
                 script {
-                    docker.image('maven:3.9.4-eclipse-temurin-21').inside("-v $PWD:/app") {
-                        // Crear carpeta local para repositorio Maven
-                        sh 'mkdir -p .m2/repository'
-                        // Ejecutar Maven usando repositorio local en /app/.m2/repository
-                        sh 'mvn clean package -DskipTests -Dmaven.repo.local=/app/.m2/repository'
+                    // Definimos la ruta absoluta para el cache Maven dentro del workspace de Jenkins
+                    def mavenLocalRepo = "${env.WORKSPACE}/.m2/repository"
+
+                    // Nos aseguramos que exista la carpeta local
+                    sh "mkdir -p ${mavenLocalRepo}"
+
+                    docker.image('maven:3.9.4-eclipse-temurin-21').inside("-v $PWD:/app -v ${mavenLocalRepo}:/root/.m2/repository") {
+                        sh 'mvn clean package -DskipTests'
                     }
                 }
             }
