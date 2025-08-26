@@ -17,9 +17,9 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                echo 'Ejecutando la compilación y pruebas del proyecto con Java 21...'
+                echo 'Ejecutando la compilación y pruebas del proyecto...'
                 script {
-                    docker.image('maven:3.9.4-eclipse-temurin-21').inside('-v $PWD:/app') {
+                    docker.image('maven:3.9.4-eclipse-temurin-21').inside("-v $PWD:/app -v /var/jenkins_home/.m2:/root/.m2") {
                         sh 'mvn clean package -DskipTests'
                     }
                 }
