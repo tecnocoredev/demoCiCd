@@ -5,7 +5,7 @@ COPY pom.xml .
 COPY src ./src
 RUN mvn -B clean package -DskipTests
 
-# Segunda etapa: Creación de la imagen de producción
+# Segunda etapa: Creación de la imagen de staging
 FROM openjdk:11-jre-slim
 WORKDIR /app
 COPY --from=build /app/target/demo-0.0.1-SNAPSHOT.jar app.jar
