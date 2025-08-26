@@ -19,19 +19,33 @@ pipeline {
             steps {
                 echo 'Ejecutando la compilación y pruebas del proyecto...'
                 script {
-                    def workspace = env.WORKSPACE
-                    def m2repo = "${workspace}/.m2"
+                    def uid = sh(script: 'id -u', returnStdout: true).trim()
+                    def gid = sh(script: 'id -g', returnStdout: true).trim()
 
-                    // Aseguramos que existan las carpetas necesarias
-                    sh "mkdir -p ${workspace}"
-                    sh "mkdir -p ${m2repo}"
-
-                    // Cambiamos los permisos del directorio para que el usuario 'root' del contenedor pueda escribir en él.
-                    // Nota: Asegúrate de que el usuario 'jenkins' pueda ejecutar este comando con 'sudo'.
-                    sh "sudo chown -R 1000:1000 ${m2repo}"
-
-                    docker.image('maven:3.9.4-eclipse-temurin-21').inside("-v ${workspace}:/app -v ${m2repo}:/root/.m2") {
+                    docker.image('maven:3.9.4-eclipse-temurin-21').inside("-v ${env.WORKSPACE}:/app -v /var/jenkins_home/.m2:/root/.m2 --user ${uid}:${gid}") {
                         sh 'mvn clean package -DskipTests'
+                    }
+                }
+            }
+        }
+
+        stage('Static Analysis') {
+            steps {
+                echo 'Realizando análisis de código estático con SonarQube...'
+                // Aquí puedes agregar integración con SonarQube si lo deseas
+            }
+        }
+
+        stage('Docker Hub Login') {
+            steps {
+                echo 'Autenticando con Docker Hub...'
+                script {
+                    withCredentials([usernamePassword(
+                        credentialsId: env.DOCKER_HUB_CREDENTIALS,
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
                     }
                 }
             }
@@ -39,22 +53,22 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                echo 'Creando la imagen de Docker...'
-                script {
-                    def dockerImage = docker.build("${DOCKER_IMAGE}")
-                    echo "Imagen de Docker creada: ${dockerImage.id}"
-                }
+                echo 'Construyendo la imagen de Docker...'
+                sh "docker build -t ${env.DOCKER_IMAGE} ."
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Push to Docker Hub') {
             steps {
-                echo 'Empujando la imagen a Docker Hub...'
+                echo 'Subiendo la imagen a Docker Hub...'
                 script {
-                    withCredentials([usernamePassword(credentialsId: DOCKER_HUB_CREDENTIALS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    withCredentials([usernamePassword(
+                        credentialsId: env.DOCKER_HUB_CREDENTIALS,
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
                         sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
-                        docker.image("${DOCKER_IMAGE}").push()
-                        echo "Imagen ${DOCKER_IMAGE} empujada a Docker Hub."
+                        sh "docker push ${env.DOCKER_IMAGE}"
                     }
                 }
             }
@@ -62,12 +76,9 @@ pipeline {
 
         stage('Deploy to Staging') {
             steps {
-                echo 'Desplegando la aplicación en el entorno de Staging...'
-                script {
-                    sh "docker rm -f ${STAGING_CONTAINER_NAME} || true"
-                    sh "docker run -d --name ${STAGING_CONTAINER_NAME} -p 8080:8080 ${DOCKER_IMAGE}"
-                    echo "Contenedor ${STAGING_CONTAINER_NAME} desplegado y escuchando en el puerto 8080."
-                }
+                echo 'Desplegando en el entorno de Staging...'
+                sh "docker rm -f ${env.STAGING_CONTAINER_NAME} || true"
+                sh "docker run -d --name ${env.STAGING_CONTAINER_NAME} -p 8083:8080 ${env.DOCKER_IMAGE}"
             }
         }
     }
