@@ -21,17 +21,9 @@ pipeline {
                 script {
                     def workspace = env.WORKSPACE
                     def m2repo = "${workspace}/.m2"
-
-                    // Aseguramos que existan las carpetas necesarias en el host de Jenkins
                     sh "mkdir -p ${workspace}"
                     sh "mkdir -p ${m2repo}"
-
-                    // Cambiamos los permisos del directorio para que el usuario 'root' del contenedor pueda escribir.
-                    // Asegúrate de que el usuario 'jenkins' en tu servidor pueda ejecutar este comando con 'sudo'.
                     sh "sudo chown -R 1000:1000 ${m2repo}"
-
-                    // Ejecutamos Maven dentro del contenedor de Docker.
-                    // Montamos el repositorio local en una ruta accesible y se la pasamos a Maven con -Dmaven.repo.local.
                     docker.image('maven:3.9.4-eclipse-temurin-21').inside("-v ${workspace}:/app -v ${m2repo}:/usr/src/app/.m2") {
                         sh 'mvn clean package -DskipTests -Dmaven.repo.local=/usr/src/app/.m2'
                     }
