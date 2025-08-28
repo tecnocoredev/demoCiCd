@@ -55,9 +55,20 @@ pipeline {
             steps {
                 echo 'Desplegando la aplicación en el entorno de Staging...'
                 script {
-                    sh "docker rm -f ${STAGING_CONTAINER_NAME} || true"
-                    sh "docker run -d --name ${STAGING_CONTAINER_NAME} -p 8080:8080 ${DOCKER_IMAGE}"
-                    echo "Contenedor ${STAGING_CONTAINER_NAME} desplegado y escuchando en el puerto 8080."
+                    sh '''
+                        if docker ps -a --format '{{.Names}}' | grep -Eq '^demo-ci-cd-staging$'; then
+                            echo "Eliminando contenedor existente..."
+                            docker rm -f demo-ci-cd-staging
+
+                            echo "Esperando a que el puerto 8080 se libere..."
+                            while lsof -Pi :8096 -sTCP:LISTEN -t >/dev/null ; do
+                                echo "Puerto 8080 aún en uso. Esperando..."
+                                sleep 1
+                            done
+                        fi
+                        echo "Desplegando nueva imagen en puerto 8096..."
+                        docker run -d --name demo-ci-cd-staging -p 8096:8080 tecnocore/demo-ci-cd:${BUILD_NUMBER}
+                    '''
                 }
             }
         }
