@@ -21,7 +21,7 @@ pipeline {
                 script {
                     def workspace = env.WORKSPACE
                     def m2repo = "${workspace}/.m2"
-                    docker.image('maven:3.9.4-eclipse-temurin-21').inside("-v ${workspace}:/app -v ${m2repo}:/usr/src/app/.m2") {
+                    docker.image('maven:3.9.4-eclipse-temurin-21').inside("-u root -v ${workspace}:/app -v ${m2repo}:/usr/src/app/.m2") {
                         sh 'mvn clean package -DskipTests -Dmaven.repo.local=/usr/src/app/.m2'
                     }
                 }
